@@ -121,6 +121,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_DIR = [os.path.join(BASE_DIR, "static")]
 
-
+# We settle the new User model in order to make auth in our web applciation
 AUTH_USER_MODEL = "core.User"
 # LOGIN_REDIRECT_URL

@@ -11,15 +11,16 @@ class UserManager(BaseUserManager):
         # user = self.model(email=email, **kwargs) # Not normalized
         if not email:
             raise ValueError("Email must have a value in order to create a User.")
-        user = self.model(email=self.normalize_email(email), **kwargs)
+        user = self.model(email=self.normalize_email(email), **kwargs) # Normalized
         user.set_password(password)
         user.save()
         return user
 
     def create_superuser(self, email, password):
         user = self.create_user(email, password)
-        user.is_staff = True
         user.is_superuser = True # attr given by the PermissionsMixins class
+        user.is_staff = True
+        user.save()
         return user 
 
 
