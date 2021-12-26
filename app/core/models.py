@@ -5,7 +5,6 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager,\
 # Create your models here.
 
 class UserManager(BaseUserManager):
-
     def create_user(self, email, password=None, **kwargs):
         """Create and save a new user"""
         # user = self.model(email=email, **kwargs) # Not normalized
