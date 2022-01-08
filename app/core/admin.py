@@ -27,3 +27,4 @@ class UserAdmin(BaseUserAdmin):
 
 # link our model with the interface + registration
 admin.site.register(models.User, UserAdmin)
+admin.site.register(models.Tag)
