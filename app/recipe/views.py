@@ -5,7 +5,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 
-from core.models import Tag, Ingredient
+from core.models import Tag, Ingredient, Recipe
 
 from recipe import serializers
 
@@ -21,7 +21,7 @@ class BaseRecipeAttrViewSet(viewsets.GenericViewSet,
         return self.queryset.filter(user=self.request.user).order_by("-name") # user est dans request grace permission_classes
     
     def perform_create(self, serializer):
-        """Create a new tag"""
+        """Create a new object"""
         serializer.save(user=self.request.user)
 
 
@@ -35,3 +35,25 @@ class IngredientViewSet(BaseRecipeAttrViewSet):
     """Manage Ingredients in database"""
     queryset = Ingredient.objects.all()
     serializer_class = serializers.IngredientSerializer
+
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    """Manage recipe in the database"""
+    serializer_class = serializers.RecipeSerializer
+    queryset = Recipe.objects.all()
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (TokenAuthentication,)
+    
+    def get_queryset(self):
+        """Retrieve recipes for the current user authenticated only"""
+        return self.queryset.filter(user=self.request.user).order_by("-id")
+    
+    def get_serializer_class(self):
+        """Return the appropriate serializer class"""
+        if self.action == "retrieve": # case of detail view
+            return serializers.RecipeDetailSerializer
+        return self.serializer_class # case of list view
+    
+    def perform_create(self, serializer):
+        """Create a new recipe object"""
+        serializer.save(user=self.request.user)
