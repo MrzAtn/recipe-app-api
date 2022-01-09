@@ -40,7 +40,7 @@ class Tag(models.Model):
     """Tag to be used for a recipe"""
     name = models.CharField(max_length=255)
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        settings.AUTH_USER_MODEL, # get the User class specified in the settings.py
         on_delete=models.CASCADE
     )
     
@@ -58,3 +58,21 @@ class Ingredient(models.Model):
     
     def __str__(self):
         return self.name
+
+
+class Recipe(models.Model):
+    """Recipe object"""
+    title = models.CharField(max_length=255)
+    time_min = models.IntegerField()
+    price = models.DecimalField(max_digits=5, decimal_places=2)
+    link = models.CharField(max_length=255, blank=True)
+    # keys
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE
+    )
+    ingredients = models.ManyToManyField(Ingredient, related_name="recipe")
+    tags = models.ManyToManyField(Tag, related_name="recipe")
+    
+    def __str__(self):
+        return self.title
