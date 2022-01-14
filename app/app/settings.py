@@ -126,7 +126,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_DIR = [os.path.join(BASE_DIR, "static")]
+MEDIA_URL = "/media/" # permet d' avoir un url pour voir sur notre webservice
+
+MEDIA_ROOT = "vol/web/media" # on indique ou register nos media et ou les recup
+STATIC_ROOT = "vol/web/static" # on indique ou sont register nos fichiers static
 
 # We settle the new User model in order to make auth in our web applciation
 AUTH_USER_MODEL = "core.User"

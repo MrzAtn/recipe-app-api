@@ -1,3 +1,8 @@
+import tempfile # permet de gérer des fichiers temporairement save
+import os
+
+from PIL import Image
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.test import TestCase
@@ -5,14 +10,18 @@ from django.test import TestCase
 from rest_framework import serializers, status
 from rest_framework.test import APIClient
 
-from core.models import Recipe, Tag, Ingredient
+from core.models import *
 
 from recipe.serializers import RecipeSerializer, RecipeDetailSerializer
 
 RECIPES_URL = reverse("recipe:recipe-list")
 
+def image_upload_url(recipe_id):
+    """RETURN URL for recipe image upload"""
+    return reverse("recipe:recipe-upload-image", args=[recipe_id])
+
 # api/recipe/recipes for the list page
-# api/recipe/recipes/1 for a specified detail recipe view
+# api/recipe/recipes/1 for a specified detail recipe view 
 
 def detail_url(recipe_id):
     """Return the recipe detail url view"""
@@ -134,7 +143,7 @@ class PrivateTestApiRecipe(TestCase):
         }
         res = self.client.post(RECIPES_URL, payload) # we create the test recipe using tags
         recipe = Recipe.objects.get(id=res.data["id"])
-        tags = recipe.tag.objects.all()
+        tags = recipe.tags.all()
         
         self.assertEqual(tags.count(), 2)
         self.assertIn(tag1, tags)
@@ -153,10 +162,49 @@ class PrivateTestApiRecipe(TestCase):
         }
         res = self.client.post(RECIPES_URL, payload) # we create the test recipe using tags
         recipe = Recipe.objects.get(id=res.data["id"])
-        ingredients = recipe.ingredients.objects.all()
+        ingredients = recipe.ingredients.all()
         
         self.assertEqual(ingredients.count(), 2)
         self.assertIn(ingredient1, ingredients)
         self.assertIn(ingredient2, ingredients)
         
+class RecipeImageUploadTest(TestCase):
+    
+    def setUp(self):
+        self.client = APIClient() 
+        self.user = get_user_model().objects.create_user(
+            email="antonin.marzelle@outlook.fr",
+            password="testPassword"
+        )
         
+        self.client.force_authenticate(self.user)
+        self.recipe = create_sample_recipe(user=self.user)
+
+    def tearDown(self): # Fonction comme setUp, appelé auto a la fin du test
+        """Assure qu'aucune image reste enregistré apres notre test"""
+        self.recipe.image.delete()
+        
+    def test_upload_image_to_recipe(self):
+        """Test uploading an image to recipe"""
+        url = image_upload_url(self.recipe.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as ntf:
+            img = Image.new("RGB", (10,10))
+            img.save(ntf, format="JPEG")
+            ntf.seek(0) # reboot file cursor to the begining of the file
+            res = self.client.post(url, {"image": ntf}, format="multipart")
+        
+        self.recipe.refresh_from_db()
+        
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("image", res.data)
+        self.assertTrue(os.path.exists(self.recipe.image.path))
+        
+    def test_upload_image_bad_request(self):
+        """Test uploading an invalid image"""
+        url = image_upload_url(self.recipe.id)
+        res = self.client.post(url, {"image": "notimage"}, format="multipart")
+        
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        
+        
+           

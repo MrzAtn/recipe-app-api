@@ -1,6 +1,7 @@
-from django.db.models.query import QuerySet
-from django.shortcuts import render
-from rest_framework import viewsets, mixins
+from rest_framework.decorators import action
+from rest_framework.response import Response # return a custom response
+
+from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -52,8 +53,32 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Return the appropriate serializer class"""
         if self.action == "retrieve": # case of detail view
             return serializers.RecipeDetailSerializer
+        elif self.action == "upload_image":
+            return serializers.RecipeImageSerializer
         return self.serializer_class # case of list view
     
     def perform_create(self, serializer):
         """Create a new recipe object"""
         serializer.save(user=self.request.user)
+        
+    @action(methods=["POST"], detail=True, url_path="upload-image")
+    def upload_image(self, request, pk=None):
+        """Upload an image to a recipe"""
+        recipe = self.get_object()
+        serializer = self.get_serializer(
+            recipe,
+            data=request.data
+        )
+        
+        # test si les données pass au serilizer sont corrects
+        if serializer.is_valid():
+            serializer.save() # save modification from update
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+        return Response(
+            serializer.errors,
+            status=status.status.HTTP_400_BAD_REQUEST
+        )
+        
